@@ -36,7 +36,7 @@ class Description:
     def __str__(self):
         return self.value
 
-
+#da controllare
 @typechecked
 @dataclass(frozen=True, order=True)
 class Author:
@@ -47,7 +47,7 @@ class Author:
         validate('key', self.key)
 
     def __str__(self):
-        return self.value
+        return str(self.key)
 
 
 @typechecked
@@ -60,7 +60,7 @@ class Date:
         validate('date', self.date, min_value=datetime.now())
 
     def __str__(self):
-        return self.date
+        return str(self.date)
 
 
 
@@ -76,6 +76,32 @@ class Location:
     def __str__(self):
         return self.value
 
+@typechecked
+@dataclass(frozen=True, order=True)
+class Category:
+    value: int
+
+    def __post_init__(self,):
+        validate_dataclass(self)
+        validate('category', self.value, min_value=0, max_value=3)
+
+    def __str__(self):
+        return str(self.value)
+
+
+@typechecked
+@dataclass(frozen=True, order=True)
+class Priority:
+    value: int
+
+    def __post_init__(self,):
+        validate_dataclass(self)
+        validate('priority', self.value,min_value=0, max_value=2)
+
+    def __str__(self):
+        return str(self.value)
+
+
 
 @typechecked
 @dataclass(frozen=True, order=True)
@@ -83,14 +109,20 @@ class Event:
     name: Name
     description: Description
     author: Author
+    start_date: Date
+    end_date: Date
     location: Location
+    category: Category
+    priority: Priority
 
-    @property
-    def type(self) -> str:
-        return 'Car'
+    def __str__(self):
+        return str('name\t description\t start_date\t end_date\t location\t category\t priority\n'+
+                   str(self.name) + '\t' + str(self.description) +'\t' + str(self.start_date) + '\t' + str(self.end_date) +
+                   '\t' + str(self.location) + '\t' + str(self.category) + '\t' + str(self.priority) + '\n')
 
-    @property
-    #mettere il check della data
+    def __post_init__(self, ):
+        validate_dataclass(self)
+        validate('date', self.end_date, min_value=self.start_date)
 
 
 @typechecked
@@ -98,25 +130,22 @@ class Event:
 class ToDoList:
     __events: List[Event] = field(default_factory=list, init=False)
 
-    def vehicles(self) -> int:
-        return len(self.__vehicles)
+    def events(self) -> int:
+        return len(self.__events)
 
-    def vehicle(self, index: int) -> Union[Car, Moto]:
-        validate('index', index, min_value=0, max_value=self.vehicles() - 1)
-        return self.__vehicles[index]
+    def event(self, index: int):
+        validate('index', index, min_value=0, max_value=self.events() - 1)
+        return self.__events[index]
 
-    def add_car(self, car: Car) -> None:
-        self.__vehicles.append(car)
+    def add_event(self, event: Event) -> None:
+        self.__events.append(event)
 
-    def add_moto(self, moto: Moto) -> None:
-        self.__vehicles.append(moto)
+    def remove_event(self, index: int) -> None:
+        validate('index', index, min_value=0, max_value=self.events() - 1)
+        del self.__events[index]
 
-    def remove_vehicle(self, index: int) -> None:
-        validate('index', index, min_value=0, max_value=self.vehicles() - 1)
-        del self.__vehicles[index]
+    def sort_by_start_date(self) -> None:
+        self.__events.sort(key=lambda x: x.start_date)
 
-    def sort_by_producer(self) -> None:
-        self.__vehicles.sort(key=lambda x: x.producer)
-
-    def sort_by_price(self) -> None:
-        self.__vehicles.sort(key=lambda x: x.price)
+    def sort_by_priority(self) -> None:
+        self.__events.sort(key=lambda x: x.priority, reverse=True)

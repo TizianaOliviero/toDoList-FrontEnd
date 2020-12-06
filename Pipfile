@@ -9,6 +9,7 @@ valid8 = "*"
 dataclass-type-validator = "*"
 pytest = "*"
 coverage = "*"
+requests = "*"
 
 [dev-packages]
 

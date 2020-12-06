@@ -1,5 +1,7 @@
 import csv
 import sys
+import getpass
+import requests
 from pathlib import Path
 from typing import Any, Tuple, Callable
 
@@ -107,8 +109,93 @@ class App:
         return name, description, start_date, end_date, location, category, priority
 
 
-def main(name: str):
-    if name == '__main__':
-        App().run()
+#def main(name: str):
+ #   if name == '__main__':
+  #      App().run()
+
+
+
+
+api_server = 'http://localhost:8000/'
+
+
+def main():
+    welcome()
+    key = login()
+    if key is None:
+        error_message()
+    posts = fetch_posts(key)
+    if posts is None:
+        error_message()
+    show_posts(posts)
+    logout(key)
+    goodbye()
+
+
+def welcome():
+    print('============== Blog TUI =============')
+    print('= Because we love the \'80s so much! =')
+    print('=====================================\n')
+
+
+
+def error_message():
+    print('Unable to retrieve posts at the moment. Please, try in a few minutes.')
+    exit()
+
+
+def goodbye():
+    print('It was nice to have your here. Have a nice day!\n')
+
+
+def login():
+    username = input('Username: ')
+    print('abc')
+    password = input('Password: ')
+
+    res = requests.post(url=f'{api_server}api-auth/login/', data={'username': username, 'password': password})
+    if res.status_code != 200:
+        return None
+    json = res.json()
+    return json['key']
+
+
+def logout(key):
+    res = requests.post(url=f'{api_server}/auth/logout/', headers={'Authorization': f'Token {key}'})
+    if res.status_code == 200:
+        print('Logged out!')
+    else:
+        print('Log out failed')
+    print()
+
+
+def fetch_posts(key):
+    res = requests.get(url=f'{api_server}/posts/', headers={'Authorization': f'Token {key}'})
+    if res.status_code != 200:
+        return None
+    return res.json()
+
+
+def show_posts(posts):
+    def sep():
+        print('-' * 60)
+
+    fmt = '{:4}\t{:50}'
+
+    print()
+    sep()
+    print('ALL POSTS FROM THE BLOG')
+    sep()
+    print(fmt.format('ID', 'TITLE'))
+    sep()
+    for post in posts:
+        print(fmt.format(post['id'], post['title']))
+    sep()
+    print()
+
+
+if __name__ == '__main__':
+    main()
+
 
 main(__name__)

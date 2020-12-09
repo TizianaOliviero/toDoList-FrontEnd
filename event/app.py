@@ -16,7 +16,21 @@ class App:
     __filename = Path(__file__).parent.parent / 'default.csv'
     __delimiter = '\t'
 
+    __key=''
+
     def __init__(self):
+        self.__first_menu = self.init_first_menu()
+        self.__menu = self.__initToDoListMenu()
+        self.__todolist = ToDoList()
+
+        def init_first_menu(self) -> Menu:
+            return Menu.Builder(Description('SIGN IN'), auto_select=lambda: print('Welcome!')) \
+                .with_entry(Entry.create('1', 'Login', is_logged=lambda: self.__login())) \
+                .with_entry(Entry.create('2', 'Register', on_selected=lambda: self.__register())) \
+                .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
+                .build()
+
+    def __initToDoListMenu(self):
         self.__menu = Menu.Builder(Description('To Do List Home'), auto_select=lambda: self.__print_events())\
             .with_entry(Entry.create('1', 'Add event', on_selected=lambda: self.__add_event()))\
             .with_entry(Entry.create('2', 'Remove event', on_selected=lambda: self.__remove_event()))\
@@ -25,6 +39,17 @@ class App:
             .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True))\
             .build()
         self.__toDoList = ToDoList()
+
+    def login(self):
+        username = input('Username: ')
+        password = input('Password: ')
+
+        res = requests.post(url=f'{api_server}/auth/login/', data={'username': username, 'password': password})
+        if res.status_code != 200:
+            return None
+        json = res.json()
+        self.__key = json['key']
+        return True  # json['key']
 
     def __print_events(self) -> None:
         print_sep = lambda: print('-' * 100)
@@ -66,12 +91,10 @@ class App:
         self.__save()
 
     def __run(self) -> None:
-        try:
-            self.__load()
-        except ValueError as e:
-            print(e)
-            print('Continuing with an empty list of events...')
-
+        welcome()
+        key = self.login()
+        if key is None:
+            error_message()
         self.__menu.run()
 
     def run(self) -> None:
@@ -116,7 +139,7 @@ class App:
 
 
 
-api_server = 'http://localhost:8000/'
+api_server = 'http://localhost:8000/api/v1'
 
 
 def main():
@@ -124,10 +147,10 @@ def main():
     key = login()
     if key is None:
         error_message()
-    posts = fetch_posts(key)
-    if posts is None:
+    events = fetch_posts(key)
+    if events is None:
         error_message()
-    show_posts(posts)
+    show_posts(events)
     logout(key)
     goodbye()
 
@@ -148,16 +171,7 @@ def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
 
 
-def login():
-    username = input('Username: ')
-    print('abc')
-    password = input('Password: ')
 
-    res = requests.post(url=f'{api_server}api-auth/login/', data={'username': username, 'password': password})
-    if res.status_code != 200:
-        return None
-    json = res.json()
-    return json['key']
 
 
 def logout(key):
@@ -170,26 +184,26 @@ def logout(key):
 
 
 def fetch_posts(key):
-    res = requests.get(url=f'{api_server}/posts/', headers={'Authorization': f'Token {key}'})
+    res = requests.get(url=f'{api_server}/events', headers={'Authorization': f'Token {key}'})
     if res.status_code != 200:
         return None
     return res.json()
 
 
-def show_posts(posts):
+def show_posts(events):
     def sep():
-        print('-' * 60)
+        print('-' * 130)
 
-    fmt = '{:4}\t{:50}'
+    fmt = '{:4}\t{:20}\t{:7}\t{:20}\t{:20}\t{:10}\t{:8}\t{:8}'
 
     print()
     sep()
-    print('ALL POSTS FROM THE BLOG')
+    print('ALL EVENTS FROM TODOLIST')
     sep()
-    print(fmt.format('ID', 'TITLE'))
+    print(fmt.format('NAME', 'DESCRIPTION', 'AUTHOR', 'START_DATE', 'END_DATE', 'LOCATION', 'PRIORITY', 'CATEGORY'))
     sep()
-    for post in posts:
-        print(fmt.format(post['id'], post['title']))
+    for event in events:
+        print(fmt.format(event['name'], event['description'], str(event['author']), event['start_date'], event['end_date'], event['location'], str(event['priority']), str(event['category'])))
     sep()
     print()
 

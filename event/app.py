@@ -151,9 +151,7 @@ class App:
         while True:
             try:
                 line = input(f'{prompt}: ')
-                print(prompt)
                 if prompt == "Start date" or prompt == "End date":
-                    print("sono entrato")
                     line = datetime.strptime(line, '%m/%d/%y %H:%M:%S')
                     res = builder(line)
                     return res
@@ -167,15 +165,15 @@ class App:
             except (TypeError, ValueError, ValidationError) as e:
                 print(e)
 
-    def __read_event(self) -> Tuple[Name, MenuDescription, Date, Date, Location, Category, Priority]:
+    def __read_event(self) -> Tuple[Name, Description, Date, Date, Location, Category, Priority]:
         name = self.__read('Name', Name)
-        description = self.__read('Description', MenuDescription)
+        description = self.__read('Description', Description)
         start_date = self.__read('Start date', Date)
         end_date = self.__read('End date', Date)
         location = self.__read('Location', Location)
         category = self.__read('Category', Category)
         priority = self.__read('Priority', Priority)
-        return name, description, start_date, end_date, location, category, priority
+        return name, description, Author(1), start_date, end_date, location, category, priority
 
 
 #def main(name: str):

@@ -16,31 +16,31 @@ class App:
     __filename = Path(__file__).parent.parent / 'default.csv'
     __delimiter = '\t'
 
-    __key=''
+    __isLogged = False;
+
+    def __first_menu(self):
+        self.__first_menu = Menu.Builder(Description('To Do List Home'), auto_select=lambda: self.__print_events()) \
+            .with_entry(Entry.create('1', 'Login', on_selected=lambda: self.__login())) \
+            .with_entry(Entry.create('2', 'Sign in', on_selected=lambda: self.__registrati())) \
+            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
+            .build()
+
+    def __real_menu(self):
+        self.__menu = Menu.Builder(Description('To Do List Home'), auto_select=lambda: self.__print_events()) \
+            .with_entry(Entry.create('1', 'Add event', on_selected=lambda: self.__add_event())) \
+            .with_entry(Entry.create('2', 'Remove event', on_selected=lambda: self.__remove_event())) \
+            .with_entry(Entry.create('3', 'Sort by srart date', on_selected=lambda: self.__sort_by_start_date())) \
+            .with_entry(Entry.create('4', 'Sort by priority', on_selected=lambda: self.__sort_by_priority())) \
+            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
+            .build()
 
     def __init__(self):
-        self.__first_menu = self.init_first_menu()
-        self.__menu = self.__initToDoListMenu()
-        self.__todolist = ToDoList()
+        self.__first_menu()
+        self.__real_menu()
 
-        def init_first_menu(self) -> Menu:
-            return Menu.Builder(Description('SIGN IN'), auto_select=lambda: print('Welcome!')) \
-                .with_entry(Entry.create('1', 'Login', is_logged=lambda: self.__login())) \
-                .with_entry(Entry.create('2', 'Register', on_selected=lambda: self.__register())) \
-                .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
-                .build()
-
-    def __initToDoListMenu(self):
-        self.__menu = Menu.Builder(Description('To Do List Home'), auto_select=lambda: self.__print_events())\
-            .with_entry(Entry.create('1', 'Add event', on_selected=lambda: self.__add_event()))\
-            .with_entry(Entry.create('2', 'Remove event', on_selected=lambda: self.__remove_event()))\
-            .with_entry(Entry.create('3', 'Sort by srart date', on_selected=lambda: self.__sort_by_start_date()))\
-            .with_entry(Entry.create('4', 'Sort by priority', on_selected=lambda: self.__sort_by_priority()))\
-            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True))\
-            .build()
         self.__toDoList = ToDoList()
 
-    def login(self):
+    def __login(self):
         username = input('Username: ')
         password = input('Password: ')
 
@@ -48,13 +48,25 @@ class App:
         if res.status_code != 200:
             return None
         json = res.json()
-        self.__key = json['key']
-        return True  # json['key']
+        return json['key']
+
+    def __registrati(self):
+        username = input('Username: ')
+        email = input("Email: ")
+        password = input('Password: ')
+        password2 = input('Ripeti Password: ')
+
+        res = requests.post(url=f'{api_server}/auth/registation/', data={'username': username, 'email': email, 'password': password, 'password2': password2})
+        if res.status_code != 200:
+            return None
+        json = res.json()
+        self.__isLogged = True
+        return json['key']
 
     def __print_events(self) -> None:
         print_sep = lambda: print('-' * 100)
         print_sep()
-        fmt = '%30s %-30s %-3s %-30s %30s %30s %3 %3'
+        fmt = '%10s %10s %10s %10s %10s %10s %10s %10s'
         print(fmt % ('NAME', 'DESCRIPTION', 'AUTHOR', 'START DATE', 'END DATE', 'LOCATION', 'CATEGORY', 'PRIORITY'))
         print_sep()
         for index in range(self.__toDoList.events()):
@@ -91,17 +103,26 @@ class App:
         self.__save()
 
     def __run(self) -> None:
-        welcome()
-        key = self.login()
-        if key is None:
-            error_message()
-        self.__menu.run()
+        # welcome()
+        # key = self.login()
+        # if key is None:
+        #     error_message()
+        # events = fetch_posts(key)
+        # if events is None:
+        #     error_message()
+        # show_posts(events)
+        # logout(key)
+        # goodbye()
+        while not self.__first_menu.run() == (True, False):
+            #self.__fecth()
+
+            self.__menu.run()
 
     def run(self) -> None:
-        try:
-            self.__run()
-        except:
-            print('Panic error!', file=sys.stderr)
+        #try:
+        self.__run()
+        #except:
+            #print('Panic error!', file=sys.stderr)
 
     def __load(self) -> None:
         pass
@@ -143,16 +164,9 @@ api_server = 'http://localhost:8000/api/v1'
 
 
 def main():
-    welcome()
-    key = login()
-    if key is None:
-        error_message()
-    events = fetch_posts(key)
-    if events is None:
-        error_message()
-    show_posts(events)
-    logout(key)
-    goodbye()
+    app = App()
+    app.run()
+
 
 
 def welcome():
@@ -192,9 +206,9 @@ def fetch_posts(key):
 
 def show_posts(events):
     def sep():
-        print('-' * 130)
+        print('-' * 180)
 
-    fmt = '{:4}\t{:20}\t{:7}\t{:20}\t{:20}\t{:10}\t{:8}\t{:8}'
+    fmt = '{:20}\t{:40}\t{:7}\t{:25}\t{:25}\t{:20}\t{:8}\t{:8}'
 
     print()
     sep()
@@ -208,8 +222,7 @@ def show_posts(events):
     print()
 
 
-if __name__ == '__main__':
-    main()
 
 
-main(__name__)
+
+main()

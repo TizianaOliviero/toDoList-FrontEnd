@@ -41,6 +41,7 @@ class Entry:
     description: Description
     on_selected: Callable[[], None] = field(default=lambda: None)
     is_exit: bool = field(default=False)
+    is_logged : bool = field(default=False)
 
     def __post_init__(self):
         validate_dataclass(self)
@@ -97,6 +98,7 @@ class Menu:
         while True:
             self.__print()
             is_exit = self.__select_from_input()
+            print(is_exit)
             if is_exit:
                 return
 

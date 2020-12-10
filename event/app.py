@@ -1,5 +1,4 @@
 import csv
-import json
 import sys
 import getpass
 from datetime import datetime
@@ -12,7 +11,7 @@ from valid8 import validate, ValidationError
 
 from event.domain import Name, Description, Author, Date, Priority, Category, Location, Event, ToDoList
 from event.menu import Menu, Entry, MenuDescription
-
+import json
 
 
 class App:
@@ -20,6 +19,14 @@ class App:
     __delimiter = '\t'
 
     __key = None
+    __is_logged = False
+
+    def __first_menu(self):
+        self.__first_menu = Menu.Builder(MenuDescription('To Do List Home'), auto_select=lambda: self.__print_events()) \
+            .with_entry(Entry.create('1', 'Login', is_logged=lambda: self.__login())) \
+            .with_entry(Entry.create('2', 'Sign in', on_selected=lambda: self.__registrati())) \
+            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
+            .build()
 
 
     def __real_menu(self):
@@ -33,6 +40,7 @@ class App:
             .build()
 
     def __init__(self):
+        self.__first_menu()
         self.__real_menu()
         self.__toDoList = ToDoList()
 
@@ -45,6 +53,10 @@ class App:
             return False
         json = res.json()
         self.__key = json['key']
+
+        res2 = requests.get(url=f'{api_server}/author/{username}',headers={'Authorization': f'Token {self.__key}'})
+        self.__authorID = username;
+
         return True
 
     def __registrati(self):
@@ -53,11 +65,11 @@ class App:
         password = input('Password: ')
         password2 = input('Ripeti Password: ')
 
-        res = requests.post(url=f'{api_server}/auth/registation/', data={'username': username, 'email': email, 'password': password, 'password2': password2})
-        if res.status_code != 200:
-            return None
-        json = res.json()
-        return json['key']
+        res = requests.post(url=f'{api_server}/auth/registration/', data={'username': username, 'email': email, 'password1': password, 'password2': password2})
+        print(res)
+        print(res.json())
+        if res.status_code == 400:
+            print('This user already exists!')
 
     def __print_events(self) -> None:
         print_sep = lambda: print('-' * 150)
@@ -65,18 +77,23 @@ class App:
         fmt = '%20s %30s %5s %20s %20s %20s %10s %10s'
         print(fmt % ('NAME', 'DESCRIPTION', 'AUTHOR', 'START DATE', 'END DATE', 'LOCATION', 'CATEGORY', 'PRIORITY'))
         print_sep()
-        self.fetch_posts(self.__key)
         for index in range(self.__toDoList.events()):
             event = self.__toDoList.event(index)
             print(fmt % (event.name.value, event.description.value, event.author.key, event.start_date.date, event.end_date.date, event.location.value, event.category.value, event.priority.value))
         print_sep()
 
-    def __add_event(self) -> None:
-        event = Event(*self.__read_event())
-        res=requests.post(url=f'{api_server}', json=json.dumps(event))
-        self.__toDoList.add_event(event)
-        print('Event added!')
 
+
+
+    def __add_event(self) -> None:
+        name, description, start_date, end_date, location, category, priority = self.__read_event()
+        print(self.__authorID)
+        event = Event(-1,name,description, Author(self.__authorID), start_date, end_date, location, category, priority)
+        self.__toDoList.add_event(event)
+        obj=json.dumps(event.json())
+
+        res = requests.post(url=f'{api_server}/', json=obj,headers={'Authorization': f'Token {self.__key}'});
+        print('Event added!')
 
     def __remove_event(self) -> None:
         def builder(value: str) -> int:
@@ -87,27 +104,26 @@ class App:
         if index == 0:
             print('Cancelled!')
             return
-        todelete=self.__toDoList.event(index-1)
-        res=requests.delete(url=f'{api_server}/{todelete.id}')
+        todelete = self.__toDoList.event(index - 1)
+        res = requests.delete(url=f'{api_server}/{todelete.id}/', headers={'Authorization': f'Token {self.__key}'})
         self.__toDoList.remove_event(index - 1)
-        print('Event removed!' + res)
 
     def __sort_by_start_date(self) -> None:
         self.__toDoList.sort_by_start_date()
-
+        self.__save()
 
     def __sort_by_priority(self) -> None:
         self.__toDoList.sort_by_priority()
-
+        self.__save()
 
     def fetch_posts(self, key):
         res = requests.get(url=f'{api_server}/events', headers={'Authorization': f'Token {key}'})
         if res.status_code != 200:
             return None
-        self.__toDoList.clear()
+
         json = res.json()
         for item in json:
-            id= int(item['id'])
+            id = int(item['id'])
             name = Name(item['name'])
             description = Description(item['description'])
             start_date = Date(datetime.strptime(item['start_date'], '%Y-%m-%dT%H:%M:%SZ'))
@@ -115,33 +131,29 @@ class App:
             location = Location(item['location'])
             category = Category(item['category'])
             priority = Priority(item['priority'])
-            self.__toDoList.add_event(Event(id, name, description, Author(1), start_date, end_date, location, category, priority))
+            self.__toDoList.add_event(Event(id,name, description, Author(1), start_date, end_date, location, category, priority))
 
         return res.json()
 
     def __run(self) -> None:
         welcome()
+        while not self.__first_menu.run() == (True, False):
 
-        key = self.__login()
+            if self.__key is False:
+                error_message()
 
-        if key is False:
-            error_message()
+            self.fetch_posts(self.__key)
+            self.__menu.run()
 
-        self.fetch_posts(self.__key)
-
-
-        self.__menu.run()
-        #show_posts(events)
-        #logout(key)
-        #goodbye()
+        logout(self.__key)
+        goodbye()
 
 
     def run(self) -> None:
         #try:
             self.__run()
         #except:
-         #   print('Panic error!', file=sys.stderr)
-
+            #print('Panic error!', file=sys.stderr)
 
 
     @staticmethod
@@ -163,7 +175,7 @@ class App:
             except (TypeError, ValueError, ValidationError) as e:
                 print(e)
 
-    def __read_event(self) -> Tuple[int, Name, Description, Date, Date, Location, Category, Priority]:
+    def __read_event(self) -> Tuple[Name, Description, Date, Date, Location, Category, Priority]:
         name = self.__read('Name', Name)
         description = self.__read('Description', Description)
         start_date = self.__read('Start date', Date)
@@ -171,13 +183,7 @@ class App:
         location = self.__read('Location', Location)
         category = self.__read('Category', Category)
         priority = self.__read('Priority', Priority)
-        return -1, name, description, Author(1), start_date, end_date, location, category, priority
-
-
-#def main(name: str):
- #   if name == '__main__':
-  #      App().run()
-
+        return name, description, start_date, end_date, location, category, priority
 
 
 
@@ -191,22 +197,19 @@ def main():
 
 
 def welcome():
-    print('============== Blog TUI =============')
+    print('============== ToDoList TUI =============')
     print('= Because we love the \'80s so much! =')
     print('=====================================\n')
 
 
 
 def error_message():
-    print('Unable to retrieve posts at the moment. Please, try in a few minutes.')
+    print('Unable to retrieve events at the moment. Please, try in a few minutes.')
     exit()
 
 
 def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
-
-
-
 
 
 def logout(key):
@@ -216,9 +219,6 @@ def logout(key):
     else:
         print('Log out failed')
     print()
-
-
-
 
 
 def show_posts(events):

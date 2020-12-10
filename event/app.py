@@ -1,6 +1,4 @@
-import csv
 import sys
-import getpass
 from datetime import datetime
 
 import requests
@@ -15,6 +13,7 @@ from event.menu import Menu, Entry, MenuDescription
 
 api_server = 'http://localhost:8000/api/v1'
 
+
 class App:
     __filename = Path(__file__).parent.parent / 'default.csv'
     __delimiter = '\t'
@@ -23,7 +22,7 @@ class App:
     __is_logged = False
 
     def __first_menu(self):
-        self.__first_menu = Menu.Builder(MenuDescription('To Do List Home'), auto_select=lambda: self.__print_events()) \
+        self.__first_menu = Menu.Builder(MenuDescription('To Do List Login'), auto_select=lambda: self.__print_events()) \
             .with_entry(Entry.create('1', 'Login', is_logged=lambda: self.__login())) \
             .with_entry(Entry.create('2', 'Sign in', on_selected=lambda: self.__registrati())) \
             .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
@@ -54,11 +53,10 @@ class App:
             return False
         json = res.json()
         self.__key = json['key']
-
+        print(self.__key)
         res2 = requests.get(url=f'{api_server}/author/{self.username}',headers={'Authorization': f'Token {self.__key}'})
         resString= str(res2.content)
         self.__authorID = int(resString[8:-2])
-        print(self.__authorID)
 
         return True
 
@@ -69,8 +67,7 @@ class App:
         password2 = input('Ripeti Password: ')
 
         res = requests.post(url=f'{api_server}/auth/registration/', data={'username': username, 'email': email, 'password1': password, 'password2': password2})
-        print(res)
-        print(res.json())
+        #print(res.json())
         if res.status_code == 400:
             print('This user already exists!')
 
@@ -119,9 +116,7 @@ class App:
             print('Cancelled!')
             return
         todelete = self.__toDoList.event(index-1)
-        print("sono qui")
         res = requests.delete(url=f'{api_server}/{todelete.id}/', headers={'Authorization': f'Token {self.__key}'})
-        print("dopo delete")
         self.__toDoList.remove_event(index-1)
 
     def __sort_by_start_date(self) -> None:
@@ -161,7 +156,6 @@ class App:
             self.fetch_events()
             self.__menu.run()
 
-        self.logout(self.__key)
         goodbye()
 
 
@@ -208,10 +202,8 @@ class App:
         else:
             print('Log out failed')
         print()
+        self.__key = None
         self.__toDoList.clear()
-
-
-
 
 
 def main():
@@ -219,12 +211,10 @@ def main():
     app.run()
 
 
-
 def welcome():
-    print('============== ToDoList TUI =============')
-    print('= Because we love the \'80s so much! =')
-    print('=====================================\n')
-
+    print('================================================================================= ToDoList TUI ===============================================================================')
+    print('=================================================================== Because we love the \'80s so much! =======================================================================')
+    print('============================================================================================================================================================================\n')
 
 
 def error_message():
@@ -234,30 +224,5 @@ def error_message():
 
 def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
-
-
-
-
-
-def show_posts(events):
-    def sep():
-        print('-' * 180)
-
-    fmt = '{:20}\t{:40}\t{:7}\t{:25}\t{:25}\t{:20}\t{:8}\t{:8}'
-
-    print()
-    sep()
-    print('ALL EVENTS FROM TODOLIST')
-    sep()
-    print(fmt.format('NAME', 'DESCRIPTION', 'AUTHOR', 'START_DATE', 'END_DATE', 'LOCATION', 'PRIORITY', 'CATEGORY'))
-    sep()
-    for event in events:
-        print(fmt.format(event['name'], event['description'], str(event['author']), event['start_date'], event['end_date'], event['location'], str(event['priority']), str(event['category'])))
-    sep()
-    print()
-
-
-
-
 
 main()

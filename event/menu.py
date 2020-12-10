@@ -100,7 +100,6 @@ class Menu:
         while True:
             self.__print()
             is_exit, is_logged = self.__select_from_input()
-            print(is_logged)
             if is_exit or is_logged:
                 return is_exit, is_logged
 

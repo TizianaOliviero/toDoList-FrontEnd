@@ -19,6 +19,14 @@ class App:
     __delimiter = '\t'
 
     __key = None
+    __is_logged = False
+
+    def __first_menu(self):
+        self.__first_menu = Menu.Builder(MenuDescription('To Do List Home'), auto_select=lambda: self.__print_events()) \
+            .with_entry(Entry.create('1', 'Login', is_logged=lambda: self.__login())) \
+            .with_entry(Entry.create('2', 'Sign in', on_selected=lambda: self.__registrati())) \
+            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
+            .build()
 
 
     def __real_menu(self):
@@ -32,6 +40,7 @@ class App:
             .build()
 
     def __init__(self):
+        self.__first_menu()
         self.__real_menu()
         self.__toDoList = ToDoList()
 
@@ -53,10 +62,8 @@ class App:
         password2 = input('Ripeti Password: ')
 
         res = requests.post(url=f'{api_server}/auth/registation/', data={'username': username, 'email': email, 'password': password, 'password2': password2})
-        if res.status_code != 200:
-            return None
-        json = res.json()
-        return json['key']
+        if res.status_code == 400:
+            print('This user already exists!')
 
     def __print_events(self) -> None:
         print_sep = lambda: print('-' * 150)
@@ -117,34 +124,24 @@ class App:
 
     def __run(self) -> None:
         welcome()
+        while not self.__first_menu.run() == (True, False):
 
-        key = self.__login()
+            if self.__key is False:
+                error_message()
 
-        if key is False:
-            error_message()
+            self.fetch_posts(self.__key)
+            self.__menu.run()
 
-        self.fetch_posts(self.__key)
-
-
-        self.__menu.run()
-        #show_posts(events)
-        #logout(key)
-        #goodbye()
+        logout(self.__key)
+        goodbye()
 
 
     def run(self) -> None:
         #try:
             self.__run()
         #except:
-         #   print('Panic error!', file=sys.stderr)
+            #print('Panic error!', file=sys.stderr)
 
-    def __load(self) -> None:
-        pass
-
-
-
-    def __save(self) -> None:
-        pass
 
     @staticmethod
     def __read(prompt: str, builder: Callable) -> Any:
@@ -176,12 +173,6 @@ class App:
         return name, description, Author(1), start_date, end_date, location, category, priority
 
 
-#def main(name: str):
- #   if name == '__main__':
-  #      App().run()
-
-
-
 
 api_server = 'http://localhost:8000/api/v1'
 
@@ -193,22 +184,19 @@ def main():
 
 
 def welcome():
-    print('============== Blog TUI =============')
+    print('============== ToDoList TUI =============')
     print('= Because we love the \'80s so much! =')
     print('=====================================\n')
 
 
 
 def error_message():
-    print('Unable to retrieve posts at the moment. Please, try in a few minutes.')
+    print('Unable to retrieve events at the moment. Please, try in a few minutes.')
     exit()
 
 
 def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
-
-
-
 
 
 def logout(key):
@@ -218,9 +206,6 @@ def logout(key):
     else:
         print('Log out failed')
     print()
-
-
-
 
 
 def show_posts(events):

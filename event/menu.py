@@ -15,7 +15,7 @@ class MenuDescription:
 
     def __post_init__(self):
         validate_dataclass(self)
-        validate('Description.value', self.value, min_len=1, max_len=1000, custom=pattern(r'[0-9A-Za-z ;.,_-]*'))
+        validate('MenuDescription.value', self.value, min_len=1, max_len=1000, custom=pattern(r'[0-9A-Za-z ;.,_-]*'))
 
     def __str__(self):
         return self.value
@@ -41,13 +41,15 @@ class Entry:
     description: MenuDescription
     on_selected: Callable[[], None] = field(default=lambda: None)
     is_exit: bool = field(default=False)
+    is_logged: Callable[[], bool] = field(default=lambda: False)
 
     def __post_init__(self):
         validate_dataclass(self)
 
     @staticmethod
-    def create(key: str, description: str, on_selected: Callable[[], None]=lambda: None, is_exit: bool=False) -> 'Entry':
-        return Entry(Key(key), MenuDescription(description), on_selected, is_exit)
+    def create(key: str, description: str, on_selected: Callable[[], None] = lambda: None,
+               is_exit: bool = False, is_logged: Callable[[], bool] = lambda: False) -> 'Entry':
+        return Entry(Key(key), MenuDescription(description), on_selected, is_exit, is_logged)
 
 
 @typechecked
@@ -82,23 +84,25 @@ class Menu:
         for entry in self.__entries:
             print(f'{entry.key}:\t{entry.description}')
 
-    def __select_from_input(self) -> bool:
+    def __select_from_input(self) -> (bool, bool):
         while True:
             try:
                 line = input("? ")
                 key = Key(line.strip())
                 entry = self.__key2entry[key]
                 entry.on_selected()
-                return entry.is_exit
-            except (KeyError, TypeError, ValueError):
+                return entry.is_exit, entry.is_logged()
+            except (KeyError, TypeError, ValueError) as e:
+                print (e)
                 print('Invalid selection. Please, try again...')
 
-    def run(self) -> None:
+    def run(self) -> (bool, bool):
         while True:
             self.__print()
-            is_exit = self.__select_from_input()
-            if is_exit:
-                return
+            is_exit, is_logged = self.__select_from_input()
+            print(is_logged)
+            if is_exit or is_logged:
+                return is_exit, is_logged
 
     @typechecked
     @dataclass()
@@ -106,7 +110,7 @@ class Menu:
         __menu: Optional['Menu']
         __create_key = object()
 
-        def __init__(self, description: MenuDescription, auto_select: Callable[[], None]=lambda: None):
+        def __init__(self, description: MenuDescription, auto_select: Callable[[], None] = lambda: None):
             self.__menu = Menu(description, auto_select, self.__create_key)
 
         @staticmethod

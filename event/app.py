@@ -11,8 +11,9 @@ from valid8 import validate, ValidationError
 
 from event.domain import Name, Description, Author, Date, Priority, Category, Location, Event, ToDoList
 from event.menu import Menu, Entry, MenuDescription
-import json
 
+
+api_server = 'http://localhost:8000/api/v1'
 
 class App:
     __filename = Path(__file__).parent.parent / 'default.csv'
@@ -36,7 +37,7 @@ class App:
             .with_entry(Entry.create('3', 'Sort by start date', on_selected=lambda: self.__sort_by_start_date())) \
             .with_entry(Entry.create('4', 'Sort by priority', on_selected=lambda: self.__sort_by_priority())) \
             .with_entry(Entry.create('5', 'Print Events', on_selected=lambda: self.__print_events())) \
-            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
+            .with_entry(Entry.create('0', 'Exit', on_selected=lambda: self.logout(), is_exit=True)) \
             .build()
 
     def __init__(self):
@@ -45,17 +46,19 @@ class App:
         self.__toDoList = ToDoList()
 
     def __login(self):
-        username = input('Username: ')
+        self.username = input('Username: ')
         password = input('Password: ')
 
-        res = requests.post(url=f'{api_server}/auth/login/', data={'username': username, 'password': password})
+        res = requests.post(url=f'{api_server}/auth/login/', data={'username': self.username, 'password': password})
         if res.status_code != 200:
             return False
         json = res.json()
         self.__key = json['key']
 
-        res2 = requests.get(url=f'{api_server}/author/{username}',headers={'Authorization': f'Token {self.__key}'})
-        self.__authorID = username;
+        res2 = requests.get(url=f'{api_server}/author/{self.username}',headers={'Authorization': f'Token {self.__key}'})
+        resString= str(res2.content)
+        self.__authorID = int(resString[8:-2])
+        print(self.__authorID)
 
         return True
 
@@ -90,9 +93,20 @@ class App:
         print(self.__authorID)
         event = Event(-1,name,description, Author(self.__authorID), start_date, end_date, location, category, priority)
         self.__toDoList.add_event(event)
-        obj=json.dumps(event.json())
+        obj={
+            "name": str(name),
+            "description": str(description),
+            "author": self.__authorID,
+            "start_date": str(start_date),
+            "end_date": str(end_date.date),
+            "location": str(location),
+            "priority": str(category),
+            "category": str(priority)
+        }
 
         res = requests.post(url=f'{api_server}/', json=obj,headers={'Authorization': f'Token {self.__key}'});
+        self.__toDoList.clear()
+        self.fetch_events()
         print('Event added!')
 
     def __remove_event(self) -> None:
@@ -104,20 +118,21 @@ class App:
         if index == 0:
             print('Cancelled!')
             return
-        todelete = self.__toDoList.event(index - 1)
+        todelete = self.__toDoList.event(index-1)
+        print("sono qui")
         res = requests.delete(url=f'{api_server}/{todelete.id}/', headers={'Authorization': f'Token {self.__key}'})
-        self.__toDoList.remove_event(index - 1)
+        print("dopo delete")
+        self.__toDoList.remove_event(index-1)
 
     def __sort_by_start_date(self) -> None:
         self.__toDoList.sort_by_start_date()
-        self.__save()
 
     def __sort_by_priority(self) -> None:
         self.__toDoList.sort_by_priority()
-        self.__save()
 
-    def fetch_posts(self, key):
-        res = requests.get(url=f'{api_server}/events', headers={'Authorization': f'Token {key}'})
+
+    def fetch_events(self):
+        res = requests.get(url=f'{api_server}/events', headers={'Authorization': f'Token {self.__key}'})
         if res.status_code != 200:
             return None
 
@@ -126,12 +141,13 @@ class App:
             id = int(item['id'])
             name = Name(item['name'])
             description = Description(item['description'])
+            author =Author(item['author'])
             start_date = Date(datetime.strptime(item['start_date'], '%Y-%m-%dT%H:%M:%SZ'))
             end_date = Date(datetime.strptime(item['end_date'], '%Y-%m-%dT%H:%M:%SZ'))
             location = Location(item['location'])
             category = Category(item['category'])
             priority = Priority(item['priority'])
-            self.__toDoList.add_event(Event(id,name, description, Author(1), start_date, end_date, location, category, priority))
+            self.__toDoList.add_event(Event(id,name, description, author, start_date, end_date, location, category, priority))
 
         return res.json()
 
@@ -142,18 +158,18 @@ class App:
             if self.__key is False:
                 error_message()
 
-            self.fetch_posts(self.__key)
+            self.fetch_events()
             self.__menu.run()
 
-        logout(self.__key)
+        self.logout(self.__key)
         goodbye()
 
 
     def run(self) -> None:
-        #try:
+        try:
             self.__run()
-        #except:
-            #print('Panic error!', file=sys.stderr)
+        except:
+            print('Panic error!', file=sys.stderr)
 
 
     @staticmethod
@@ -162,7 +178,7 @@ class App:
             try:
                 line = input(f'{prompt}: ')
                 if prompt == "Start date" or prompt == "End date":
-                    line = datetime.strptime(line, '%m/%d/%y %H:%M:%S')
+                    line = datetime.strptime(line, '%m/%d/%yT%H:%M:%SZ')
                     res = builder(line)
                     return res
                 if prompt == "Category" or prompt == "Priority":
@@ -185,9 +201,17 @@ class App:
         priority = self.__read('Priority', Priority)
         return name, description, start_date, end_date, location, category, priority
 
+    def logout(self):
+        res = requests.post(url=f'{api_server}/auth/logout/', headers={'Authorization': f'Token {self.__key}'})
+        if res.status_code == 200:
+            print('Logged out!')
+        else:
+            print('Log out failed')
+        print()
+        self.__toDoList.clear()
 
 
-api_server = 'http://localhost:8000/api/v1'
+
 
 
 def main():
@@ -212,13 +236,7 @@ def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
 
 
-def logout(key):
-    res = requests.post(url=f'{api_server}/auth/logout/', headers={'Authorization': f'Token {key}'})
-    if res.status_code == 200:
-        print('Logged out!')
-    else:
-        print('Log out failed')
-    print()
+
 
 
 def show_posts(events):

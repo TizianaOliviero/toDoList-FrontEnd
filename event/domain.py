@@ -145,6 +145,9 @@ class Event:
 class ToDoList:
     __events: List[Event] = field(default_factory=list, init=False)
 
+    def clear(self):
+        self.__events.clear()
+
     def events(self) -> int:
         return len(self.__events)
 

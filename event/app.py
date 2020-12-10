@@ -1,4 +1,5 @@
 import csv
+import json
 import sys
 import getpass
 from datetime import datetime
@@ -64,6 +65,7 @@ class App:
         fmt = '%20s %30s %5s %20s %20s %20s %10s %10s'
         print(fmt % ('NAME', 'DESCRIPTION', 'AUTHOR', 'START DATE', 'END DATE', 'LOCATION', 'CATEGORY', 'PRIORITY'))
         print_sep()
+        self.fetch_posts(self.__key)
         for index in range(self.__toDoList.events()):
             event = self.__toDoList.event(index)
             print(fmt % (event.name.value, event.description.value, event.author.key, event.start_date.date, event.end_date.date, event.location.value, event.category.value, event.priority.value))
@@ -71,8 +73,8 @@ class App:
 
     def __add_event(self) -> None:
         event = Event(*self.__read_event())
+        res=requests.post(url=f'{api_server}', json=json.dumps(event))
         self.__toDoList.add_event(event)
-        self.__save()
         print('Event added!')
 
 
@@ -85,25 +87,27 @@ class App:
         if index == 0:
             print('Cancelled!')
             return
+        todelete=self.__toDoList.event(index-1)
+        res=requests.delete(url=f'{api_server}/{todelete.id}')
         self.__toDoList.remove_event(index - 1)
-        self.__save()
-        print('Vehicle removed!')
+        print('Event removed!' + res)
 
     def __sort_by_start_date(self) -> None:
         self.__toDoList.sort_by_start_date()
-        self.__save()
+
 
     def __sort_by_priority(self) -> None:
         self.__toDoList.sort_by_priority()
-        self.__save()
+
 
     def fetch_posts(self, key):
         res = requests.get(url=f'{api_server}/events', headers={'Authorization': f'Token {key}'})
         if res.status_code != 200:
             return None
-
+        self.__toDoList.clear()
         json = res.json()
         for item in json:
+            id= int(item['id'])
             name = Name(item['name'])
             description = Description(item['description'])
             start_date = Date(datetime.strptime(item['start_date'], '%Y-%m-%dT%H:%M:%SZ'))
@@ -111,7 +115,7 @@ class App:
             location = Location(item['location'])
             category = Category(item['category'])
             priority = Priority(item['priority'])
-            self.__toDoList.add_event(Event(name, description, Author(1), start_date, end_date, location, category, priority))
+            self.__toDoList.add_event(Event(id, name, description, Author(1), start_date, end_date, location, category, priority))
 
         return res.json()
 
@@ -138,13 +142,7 @@ class App:
         #except:
          #   print('Panic error!', file=sys.stderr)
 
-    def __load(self) -> None:
-        pass
 
-
-
-    def __save(self) -> None:
-        pass
 
     @staticmethod
     def __read(prompt: str, builder: Callable) -> Any:
@@ -165,7 +163,7 @@ class App:
             except (TypeError, ValueError, ValidationError) as e:
                 print(e)
 
-    def __read_event(self) -> Tuple[Name, Description, Date, Date, Location, Category, Priority]:
+    def __read_event(self) -> Tuple[int, Name, Description, Date, Date, Location, Category, Priority]:
         name = self.__read('Name', Name)
         description = self.__read('Description', Description)
         start_date = self.__read('Start date', Date)
@@ -173,7 +171,7 @@ class App:
         location = self.__read('Location', Location)
         category = self.__read('Category', Category)
         priority = self.__read('Priority', Priority)
-        return name, description, Author(1), start_date, end_date, location, category, priority
+        return -1, name, description, Author(1), start_date, end_date, location, category, priority
 
 
 #def main(name: str):

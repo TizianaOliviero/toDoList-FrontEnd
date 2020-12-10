@@ -65,7 +65,7 @@ def test_wrong_start_end_date():
     start_date = datetime(2021, 9, 9)
     end_date = datetime(2021, 8, 8)
     with pytest.raises(ValidationError):
-        Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'), Category(1), Priority(1))
+        Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'), Category(1), Priority(1))
 
 
 def test_category_out_of_range():
@@ -98,7 +98,7 @@ def test_add_event():
     toDoList = ToDoList()
     end_date = datetime(2021, 9, 9)
     start_date = datetime(2021, 8, 8)
-    event= Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'), Category(1), Priority(1))
+    event= Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'), Category(1), Priority(1))
     toDoList.add_event(event)
     assert toDoList.events()==1
 
@@ -106,7 +106,7 @@ def test_remove_event():
     toDoList = ToDoList()
     end_date = datetime(2021, 9, 9)
     start_date = datetime(2021, 8, 8)
-    event= Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'), Category(1), Priority(1))
+    event= Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'), Category(1), Priority(1))
     toDoList.add_event(event)
     toDoList.remove_event(0)
     assert toDoList.events()==0
@@ -115,7 +115,7 @@ def test_index_todolist():
     toDoList = ToDoList()
     end_date = datetime(2021, 9, 9)
     start_date = datetime(2021, 8, 8)
-    event = Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
+    event = Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
                   Category(1), Priority(1))
     toDoList.add_event(event)
     assert toDoList.event(0)==event
@@ -124,11 +124,11 @@ def test_sort_date():
     toDoList = ToDoList()
     end_date = datetime(2021, 9, 9)
     start_date = datetime(2021, 8, 8)
-    event = Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
+    event = Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
                   Category(1), Priority(1))
     toDoList.add_event(event)
     start_date2 = datetime(2021, 7, 7)
-    event2 = Event(Name('nome'), Description('descr'), Author(0), Date(start_date2), Date(end_date), Location('casa mia'),
+    event2 = Event(2,Name('nome'), Description('descr'), Author(0), Date(start_date2), Date(end_date), Location('casa mia'),
                   Category(1), Priority(1))
     toDoList.add_event(event2)
     toDoList.sort_by_start_date()
@@ -138,11 +138,11 @@ def test_sort_priority():
     toDoList = ToDoList()
     end_date = datetime(2021, 9, 9)
     start_date = datetime(2021, 8, 8)
-    event = Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
+    event = Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
                   Category(1), Priority(2))
     toDoList.add_event(event)
     start_date2 = datetime(2021, 7, 7)
-    event2 = Event(Name('nome'), Description('descr'), Author(0), Date(start_date2), Date(end_date), Location('casa mia'),
+    event2 = Event(2,Name('nome'), Description('descr'), Author(0), Date(start_date2), Date(end_date), Location('casa mia'),
                   Category(1), Priority(1))
     toDoList.add_event(event2)
     toDoList.sort_by_priority()
@@ -151,7 +151,7 @@ def test_sort_priority():
 def test_event_str():
     end_date = datetime(2021, 9, 9)
     start_date = datetime(2021, 8, 8)
-    event = Event(Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
+    event = Event(1,Name('nome'), Description('descr'), Author(0), Date(start_date), Date(end_date), Location('casa mia'),
                   Category(1), Priority(1))
     print(event)
 

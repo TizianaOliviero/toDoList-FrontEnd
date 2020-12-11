@@ -55,9 +55,9 @@ class App:
         print(self.__key)
         res2 = requests.get(url=f'{api_server}/author/{self.username}',
                             headers={'Authorization': f'Token {self.__key}'})
-        resString = str(res2.content)
-        self.__authorID = int(resString[8:-2])
-
+        #resString = str(res2.content)
+        json=res2.json()
+        self.__authorID = json['id']#int(resString[8:-2])
         return True
 
     def __registrati(self):
@@ -70,7 +70,8 @@ class App:
                             data={'username': username, 'email': email, 'password1': password, 'password2': password2})
         # print(res.json())
         if res.status_code == 400:
-            print('This user already exists!')
+            print('Something went wrong')
+
 
     def __print_events(self) -> None:
         print_sep = lambda: print('-' * 150)
@@ -119,6 +120,7 @@ class App:
         todelete = self.__toDoList.event(index - 1)
         res = requests.delete(url=f'{api_server}/{todelete.id}/', headers={'Authorization': f'Token {self.__key}'})
         self.__toDoList.remove_event(index - 1)
+        print('Event removed')
 
     def __sort_by_start_date(self) -> None:
         self.__toDoList.sort_by_start_date()
@@ -160,10 +162,11 @@ class App:
         goodbye()
 
     def run(self) -> None:
-        #try:
-            self.__run()
-        #except:
-            #print('Panic error!', file=sys.stderr)
+        # try:
+        self.__run()
+
+    # except:
+    # print('Panic error!', file=sys.stderr)
 
     @staticmethod
     def __read(prompt: str, builder: Callable) -> Any:
@@ -205,7 +208,7 @@ class App:
         self.__toDoList.clear()
 
 
-#def main():
+# def main():
 #    app = App()
 #    app.run()
 
@@ -230,8 +233,6 @@ def error_message():
 
 def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
-
-
 
 
 main(__name__)

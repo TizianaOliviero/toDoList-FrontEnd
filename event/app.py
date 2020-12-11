@@ -10,7 +10,6 @@ from valid8 import validate, ValidationError
 from event.domain import Name, Description, Author, Date, Priority, Category, Location, Event, ToDoList
 from event.menu import Menu, Entry, MenuDescription
 
-
 api_server = 'http://localhost:8000/api/v1'
 
 
@@ -27,7 +26,6 @@ class App:
             .with_entry(Entry.create('2', 'Sign in', on_selected=lambda: self.__registrati())) \
             .with_entry(Entry.create('0', 'Exit', on_selected=lambda: print('Bye!'), is_exit=True)) \
             .build()
-
 
     def __real_menu(self):
         self.__menu = Menu.Builder(MenuDescription('To Do List Home'), auto_select=lambda: self.__print_events()) \
@@ -50,12 +48,14 @@ class App:
 
         res = requests.post(url=f'{api_server}/auth/login/', data={'username': self.username, 'password': password})
         if res.status_code != 200:
+            print('Wrong Credentials!')
             return False
         json = res.json()
         self.__key = json['key']
         print(self.__key)
-        res2 = requests.get(url=f'{api_server}/author/{self.username}',headers={'Authorization': f'Token {self.__key}'})
-        resString= str(res2.content)
+        res2 = requests.get(url=f'{api_server}/author/{self.username}',
+                            headers={'Authorization': f'Token {self.__key}'})
+        resString = str(res2.content)
         self.__authorID = int(resString[8:-2])
 
         return True
@@ -66,8 +66,9 @@ class App:
         password = input('Password: ')
         password2 = input('Ripeti Password: ')
 
-        res = requests.post(url=f'{api_server}/auth/registration/', data={'username': username, 'email': email, 'password1': password, 'password2': password2})
-        #print(res.json())
+        res = requests.post(url=f'{api_server}/auth/registration/',
+                            data={'username': username, 'email': email, 'password1': password, 'password2': password2})
+        # print(res.json())
         if res.status_code == 400:
             print('This user already exists!')
 
@@ -79,18 +80,18 @@ class App:
         print_sep()
         for index in range(self.__toDoList.events()):
             event = self.__toDoList.event(index)
-            print(fmt % (event.name.value, event.description.value, event.author.key, event.start_date.date, event.end_date.date, event.location.value, event.category.value, event.priority.value))
+            print(fmt % (
+                event.name.value, event.description.value, event.author.key, event.start_date.date, event.end_date.date,
+                event.location.value, event.category.value, event.priority.value))
         print_sep()
-
-
-
 
     def __add_event(self) -> None:
         name, description, start_date, end_date, location, category, priority = self.__read_event()
         print(self.__authorID)
-        event = Event(-1,name,description, Author(self.__authorID), start_date, end_date, location, category, priority)
+        event = Event(-1, name, description, Author(self.__authorID), start_date, end_date, location, category,
+                      priority)
         self.__toDoList.add_event(event)
-        obj={
+        obj = {
             "name": str(name),
             "description": str(description),
             "author": self.__authorID,
@@ -101,7 +102,7 @@ class App:
             "category": str(priority)
         }
 
-        res = requests.post(url=f'{api_server}/', json=obj,headers={'Authorization': f'Token {self.__key}'});
+        res = requests.post(url=f'{api_server}/', json=obj, headers={'Authorization': f'Token {self.__key}'});
         self.__toDoList.clear()
         self.fetch_events()
         print('Event added!')
@@ -115,16 +116,15 @@ class App:
         if index == 0:
             print('Cancelled!')
             return
-        todelete = self.__toDoList.event(index-1)
+        todelete = self.__toDoList.event(index - 1)
         res = requests.delete(url=f'{api_server}/{todelete.id}/', headers={'Authorization': f'Token {self.__key}'})
-        self.__toDoList.remove_event(index-1)
+        self.__toDoList.remove_event(index - 1)
 
     def __sort_by_start_date(self) -> None:
         self.__toDoList.sort_by_start_date()
 
     def __sort_by_priority(self) -> None:
         self.__toDoList.sort_by_priority()
-
 
     def fetch_events(self):
         res = requests.get(url=f'{api_server}/events', headers={'Authorization': f'Token {self.__key}'})
@@ -136,13 +136,14 @@ class App:
             id = int(item['id'])
             name = Name(item['name'])
             description = Description(item['description'])
-            author =Author(item['author'])
+            author = Author(item['author'])
             start_date = Date(datetime.strptime(item['start_date'], '%Y-%m-%dT%H:%M:%SZ'))
             end_date = Date(datetime.strptime(item['end_date'], '%Y-%m-%dT%H:%M:%SZ'))
             location = Location(item['location'])
             category = Category(item['category'])
             priority = Priority(item['priority'])
-            self.__toDoList.add_event(Event(id,name, description, author, start_date, end_date, location, category, priority))
+            self.__toDoList.add_event(
+                Event(id, name, description, author, start_date, end_date, location, category, priority))
 
         return res.json()
 
@@ -158,13 +159,11 @@ class App:
 
         goodbye()
 
-
     def run(self) -> None:
-        try:
+        #try:
             self.__run()
-        except:
-            print('Panic error!', file=sys.stderr)
-
+        #except:
+            #print('Panic error!', file=sys.stderr)
 
     @staticmethod
     def __read(prompt: str, builder: Callable) -> Any:
@@ -206,15 +205,22 @@ class App:
         self.__toDoList.clear()
 
 
-def main():
-    app = App()
-    app.run()
+#def main():
+#    app = App()
+#    app.run()
+
+def main(name: str):
+    if name == '__main__':
+        App().run()
 
 
 def welcome():
-    print('================================================================================= ToDoList TUI ===============================================================================')
-    print('=================================================================== Because we love the \'80s so much! =======================================================================')
-    print('============================================================================================================================================================================\n')
+    print(
+        '================================================================================= ToDoList TUI ===============================================================================')
+    print(
+        '=================================================================== Because we love the \'80s so much! =======================================================================')
+    print(
+        '============================================================================================================================================================================\n')
 
 
 def error_message():
@@ -225,4 +231,7 @@ def error_message():
 def goodbye():
     print('It was nice to have your here. Have a nice day!\n')
 
-main()
+
+
+
+main(__name__)

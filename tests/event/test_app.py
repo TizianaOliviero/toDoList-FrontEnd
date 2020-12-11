@@ -29,30 +29,16 @@ def test_exit(mocked_print, mocked_input):
 
 @patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'})])
 @patch('requests.get', side_effect=[mock_response_dict(200)])
-@patch('builtins.input', side_effect=['1', 'supevvfrptnmd', '0;gs4QR<', '0', '0'])
+@patch('builtins.input', side_effect=['1', 'supevvfrptnmd', '0;gs4ssQR<','1', 'superptnmd', '0;gs4QR<'])
 @patch('builtins.print')
-def test_wrong_username(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post):
+def test_wrong_credentials(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post):
     with patch('builtins.open', mock_open()):
         App().run()
     mocked_print.assert_any_call('*** To Do List Login ***')
     mocked_requests_post.assert_called()
     mocked_requests_get.assert_called()
     mocked_input.assert_called()
-    mocked_print.assert_any_call('*** To Do List Login ***')
-
-
-@patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'})])
-@patch('requests.get', side_effect=[mock_response_dict(200)])
-@patch('builtins.input', side_effect=['1', 'supevvfrptnmd', 'wrongPassword','0;gs4QR<', '0', '0'])
-@patch('builtins.print')
-def test_wrong_password(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post):
-    with patch('builtins.open', mock_open()):
-        App().run()
-    mocked_print.assert_any_call('*** To Do List Login ***')
-    mocked_requests_post.assert_called()
-    mocked_requests_get.assert_called()
-    mocked_print.assert_any_call('*** To Do List Login ***')
-
+    #mocked_print.assert_any_call('It was nice to have your here. Have a nice day!\n')
 
 @patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'})])
 @patch('requests.get', side_effect=[mock_response(200, [{'id': 1,

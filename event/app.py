@@ -153,7 +153,7 @@ class App:
         welcome()
         while not self.__first_menu.run() == (True, False):
 
-            if self.__key is False:
+            if self.__key is None:
                 error_message()
 
             self.fetch_events()
@@ -207,10 +207,6 @@ class App:
         self.__key = None
         self.__toDoList.clear()
 
-
-# def main():
-#    app = App()
-#    app.run()
 
 def main(name: str):
     if name == '__main__':

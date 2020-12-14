@@ -126,19 +126,6 @@ class Event:
         validate_dataclass(self)
         validate('date', self.end_date, min_value=self.start_date)
 
-    def json(self):
-
-        return {
-            "name": self.name.value,
-            "description": self.description.value,
-            "author": self.author.key,
-            "start_date": str(self.start_date.date),
-            "end_date": str(self.end_date.date),
-            "location": self.location.value,
-            "priority": self.priority.value,
-            "category": self.category.value
-        }
-
 
 @typechecked
 @dataclass(frozen=True)

@@ -103,6 +103,22 @@ def test_add_event(mocked_print, mocked_input, mocked_requests_get, mocked_reque
 
 
 @patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'}),
+                                     mock_response_dict(200),
+                                     mock_response_dict(200),])
+@patch('requests.get', side_effect=[mock_response_dict(200, {'id': 1}),
+                                    mock_response_dict(400),
+                                    mock_response_dict(400)])
+@patch('builtins.input', side_effect=['1', 'tiziana2', 'w34R...---', '1', 'evento1', 'desc', '1/1/22T12:12:12Z',
+                                      '1/1/22Tcdcd12:12:12Z','1/1/22T12:12:12Z', 'location', '1','1','0','0'])
+@patch('builtins.print')
+def test_add_event_with_error_in_the_date(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post):
+    with patch('builtins.open'):
+        App().run()
+    mocked_requests_post.assert_called()
+    mocked_input.assert_called()
+    mocked_print.assert_any_call('Event added!')
+
+@patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'}),
                                      mock_response_dict(200)])
 @patch('requests.get', side_effect=[mock_response_dict(200, {'id': 1}),
                                     mock_response(200, [{'id': 1,
@@ -125,3 +141,97 @@ def test_remove_event(mocked_print, mocked_input, mocked_requests_get, mocked_re
     mocked_input.assert_called()
     mocked_requests_delete.assert_called()
     mocked_print.assert_any_call('Event removed')
+
+@patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'}),
+                                     mock_response_dict(200)])
+@patch('requests.get', side_effect=[mock_response_dict(200, {'id': 1}),
+                                    mock_response(200, [{'id': 1,
+                                                         'name': 'Calcetto',
+                                                         'description': '11 vs 11',
+                                                         'author': 1,
+                                                         'start_date': '2021-12-25T12:12:12Z',
+                                                         'end_date': '2021-12-26T12:12:12Z',
+                                                         'location': 'stadio',
+                                                         'category': 1,
+                                                         'priority': 1},
+                                                        ])])
+@patch('requests.delete', side_effect=[mock_response(200)])
+@patch('builtins.input', side_effect=['1', 'tiziana2', 'w34R...---', '2', '0','0','0'])
+@patch('builtins.print')
+def test_cancelled_remove_event(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post, mocked_requests_delete):
+    with patch('builtins.open'):
+        App().run()
+
+    mocked_requests_post.assert_called()
+    mocked_input.assert_called()
+    mocked_print.assert_any_call('Cancelled!')
+
+@patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'}),
+                                     mock_response_dict(200)])
+@patch('requests.get', side_effect=[mock_response_dict(200, {'id': 1}),
+                                    mock_response(200, [{'id': 1,
+                                                         'name': 'Calcetto',
+                                                         'description': '11 vs 11',
+                                                         'author': 1,
+                                                         'start_date': '2021-12-25T12:12:12Z',
+                                                         'end_date': '2021-12-26T12:12:12Z',
+                                                         'location': 'stadio',
+                                                         'category': 1,
+                                                         'priority': 1},
+                                                        ])])
+@patch('requests.delete', side_effect=[mock_response(200)])
+@patch('builtins.input', side_effect=['1', 'tiziana2', 'w34R...---', '3','0','0'])
+@patch('builtins.print')
+def test_sort_by_date(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post, mocked_requests_delete):
+    with patch('builtins.open'):
+        App().run()
+
+    mocked_requests_post.assert_called()
+    mocked_input.assert_called()
+
+@patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'}),
+                                     mock_response_dict(200)])
+@patch('requests.get', side_effect=[mock_response_dict(200, {'id': 1}),
+                                    mock_response(200, [{'id': 1,
+                                                         'name': 'Calcetto',
+                                                         'description': '11 vs 11',
+                                                         'author': 1,
+                                                         'start_date': '2021-12-25T12:12:12Z',
+                                                         'end_date': '2021-12-26T12:12:12Z',
+                                                         'location': 'stadio',
+                                                         'category': 1,
+                                                         'priority': 1},
+                                                        ])])
+@patch('requests.delete', side_effect=[mock_response(200)])
+@patch('builtins.input', side_effect=['1', 'tiziana2', 'w34R...---', '4','0','0'])
+@patch('builtins.print')
+def test_sort_by_priority(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post, mocked_requests_delete):
+    with patch('builtins.open'):
+        App().run()
+
+    mocked_requests_post.assert_called()
+    mocked_input.assert_called()
+
+
+@patch('requests.post', side_effect=[mock_response_dict(200, {'key': '301ed42f7db4a71b682716f7b3e351a2dd10c459'}),
+                                     mock_response_dict(400)])
+@patch('requests.get', side_effect=[mock_response(200, {'id': 1}),
+                                    mock_response(200, [{'id': 1,
+                                                         'name': 'Calcetto',
+                                                         'description': '11 vs 11',
+                                                         'author': 1,
+                                                         'start_date': '2021-12-25T12:12:12Z',
+                                                         'end_date': '2021-12-26T12:12:12Z',
+                                                         'location': 'stadio',
+                                                         'category': 1,
+                                                         'priority': 1},
+                                                        ])])
+@patch('builtins.input', side_effect=['1', 'superptnmd', '0;gs4QR<!','0','0'])
+@patch('builtins.print')
+def test_logout_wrong(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post):
+    with patch('builtins.open'):
+        App().run()
+    mocked_requests_post.assert_called()
+    mocked_input.assert_called()
+    mocked_requests_get.assert_called_with(url='http://localhost:8000/api/v1/events', headers={'Authorization': 'Token 301ed42f7db4a71b682716f7b3e351a2dd10c459'})
+    mocked_print.assert_any_call('Log out failed')

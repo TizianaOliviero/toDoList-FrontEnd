@@ -52,7 +52,7 @@ def test_register_user_already_exists(mocked_print, mocked_input, mocked_request
 
 @patch('requests.post', side_effect=[mock_response_dict(400)])
 @patch('requests.get', side_effect=[mock_response_dict(403)])
-@patch('builtins.input', side_effect=['2', 'tiziana2', 'qq@example.it', 'qwerty', 'qwerty','0'])
+@patch('builtins.input', side_effect=['2', 'tizianatest', 'qq@example.it', 'qwerty', 'qwerty','0'])
 @patch('builtins.print')
 def test_register_user_common_password(mocked_print, mocked_input, mocked_requests_get, mocked_requests_post):
     with patch('builtins.open'):

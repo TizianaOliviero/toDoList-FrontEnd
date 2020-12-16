@@ -162,11 +162,11 @@ class App:
         goodbye()
 
     def run(self) -> None:
-        # try:
+     try:
         self.__run()
 
-    # except:
-    # print('Panic error!', file=sys.stderr)
+     except:
+        print('Panic error!', file=sys.stderr)
 
     @staticmethod
     def __read(prompt: str, builder: Callable) -> Any:
